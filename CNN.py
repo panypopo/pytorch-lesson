@@ -6,7 +6,6 @@ from torchvision import datasets, transforms
 
 
 class Net(nn.Module):
-
     def __init__(self):
         super(Net, self).__init__()
 
@@ -66,6 +65,49 @@ class Net(nn.Module):
         return out
 
 
+class LeNet(nn.Module):
+    """
+    LeNet: 早期的卷积神经网络,LeNet展示了通过梯度下降训练卷积神经网络可以达到手写数字识别在当时最先进的结果。
+    这个奠基性的工作第一次将卷积神经网络推上舞台，为世人所知。
+    LeNet分为卷积层块和全连接层块两个部分.
+    卷积层块里的基本单位是卷积层后接最大池化层.
+    在卷积层块中，每个卷积层都使用 5×5 的窗口，并在输出上使用sigmoid激活函数。
+    第一个卷积层输出通道数为6，第二个卷积层输出通道数则增加到16.
+    卷积层块的两个最大池化层的窗口形状均为 2×2 ，且步幅为2。
+    全连接层的输入形状将变成二维，其中第一维是小批量中的样本，第二维是每个样本变平后的向量表示，
+    且向量长度为通道、高和宽的乘积。全连接层块含3个全连接层。它们的输出个数分别是120、84和10，其中10为输出的类别个数。
+    """
+
+    def __init__(self):
+        super(LeNet, self).__init__()
+        # 卷积层
+        # 两个卷积单位
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5),
+            nn.Sigmoid(),
+            nn.MaxPool2d(2, stride=2),
+            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5),
+            nn.Sigmoid(),
+            nn.MaxPool2d(2, stride=2)
+        )
+        # 全连接层，3个Liner
+        self.fc = nn.Sequential(
+            nn.Linear(4 * 4 * 16, 120),
+            nn.Sigmoid(),
+            nn.Linear(120, out_features=84),
+            nn.Sigmoid(),
+            nn.Linear(84, out_features=10)
+        )
+
+    def forward(self, input):
+        out = self.conv(input)
+        out = out.view(out.size(0), -1)
+        out = self.fc(out)
+        return out
+
+
+
+
 # 数据相关
 num_epochs = 1  # 训练次数
 batch_size = 100  # 训练批次
@@ -75,7 +117,6 @@ learning_rate = 0.001  # 学习率
 def get_variable(x):
     x = Variable(x)
     return x.cuda() if torch.cuda.is_available() else x
-
 
 # 从torchvision.datasets中加载训练和测试数据
 train_dataset = datasets.MNIST(
@@ -104,7 +145,7 @@ test_loader = torch.utils.data.DataLoader(
     shuffle=False
 )
 
-cnn = Net()
+cnn = LeNet()
 # for GPU
 if torch.cuda.is_available():
     cnn = cnn.cuda()
